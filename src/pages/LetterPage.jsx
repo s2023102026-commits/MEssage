@@ -7,7 +7,7 @@ import VideoMessageScreen from '../components/VideoMessageScreen';
 
 /** Seconds of audio kept at the end of the track for the farewell → airplane scene (any track length). */
 const FINALE_MUSIC_TAIL_SEC = 74;
-const DEFAULT_VIDEO_URL = 'https://drive.google.com/file/d/1B5Rjx7eFfLEeL4UbW_ELotw4SdvdCKWT/view?usp=sharing';
+const DEFAULT_VIDEO_URL = 'https://drive.google.com/file/d/1xV_Gy434ntNSbnf5MELIHLJiGXXiMJRP/view?usp=sharing';
 
 const LetterPage = () => {
   const [searchParams] = useSearchParams();
