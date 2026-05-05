@@ -45,7 +45,8 @@ const CreatorPage = () => {
       const base64Data = btoa(unescape(encodeURIComponent(jsonString))); // Handle unicode characters
       
       const baseUrl = window.location.origin;
-      const finalUrl = `${baseUrl}/letter?data=${base64Data}`;
+      const basePath = import.meta.env.BASE_URL || '/';
+      const finalUrl = `${baseUrl}${basePath}letter?data=${base64Data}`;
       
       setGeneratedLink(finalUrl);
     } catch (err) {
