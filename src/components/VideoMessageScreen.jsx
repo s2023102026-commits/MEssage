@@ -1181,16 +1181,9 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
             </div>
           </div>
 
-          {/* Video container - call-style window */}
-          <div style={{
-            width: '96%', maxWidth: '900px',
-            height: '78vh',
-            borderRadius: '24px', overflow: 'hidden',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.08)',
+          <div className="video-container-responsive" style={{
             opacity: videoReady ? 1 : 0,
             transform: videoReady ? 'scale(1)' : 'scale(0.85)',
-            transition: 'opacity 1.5s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1)',
-            position: 'relative'
           }}>
             {isDriveVideo ? (
               <>
@@ -1294,7 +1287,7 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
                 <video
                   ref={videoRef}
                   src={resolvedVideoSrc}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  className="responsive-video"
                   autoPlay
                   playsInline
                   preload="auto"
