@@ -834,11 +834,11 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
           }}>
             {/* LEFT TERMINAL — ASCII Art */}
             <div style={{
-              flex: '0 0 auto', width: window.innerWidth >= 700 ? '50%' : '100%',
+              flex: 1, width: window.innerWidth >= 700 ? '50%' : '100%',
               overflow: 'auto', padding: '15px',
               borderRight: window.innerWidth >= 700 ? '1px solid rgba(0,255,0,0.15)' : 'none',
               borderBottom: window.innerWidth < 700 ? '1px solid rgba(0,255,0,0.15)' : 'none',
-              position: 'relative'
+              position: 'relative', minHeight: 0
             }}>
               <div style={{
                 fontSize: '0.7rem', letterSpacing: '2px', opacity: 0.4,
@@ -874,7 +874,7 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
             {/* RIGHT TERMINAL — Message */}
             <div style={{
               flex: 1, overflow: 'auto', padding: '15px',
-              display: 'flex', flexDirection: 'column'
+              display: 'flex', flexDirection: 'column', minHeight: 0
             }}>
               <div style={{
                 fontSize: '0.7rem', letterSpacing: '2px', opacity: 0.4,
