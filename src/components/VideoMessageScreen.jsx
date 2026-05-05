@@ -858,13 +858,16 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
               )}
 
               {asciiLines.length > 0 && asciiDisplayCount > 0 && (
-                <pre style={{
-                  fontSize: 'min(0.4rem, 1vw)', lineHeight: '1.15',
-                  color: '#00ff00', margin: 0, whiteSpace: 'pre',
-                  overflow: 'auto', opacity: 0.85
-                }}>
-                  {asciiLines.slice(0, asciiDisplayCount).join('\n')}
-                </pre>
+                <div style={{ width: '100%', overflowX: 'auto' }}>
+                  <pre style={{
+                    fontSize: 'min(0.4rem, 1.2vw)', lineHeight: '1.15',
+                    color: '#00ff00', margin: 0, 
+                    whiteSpace: 'pre', wordBreak: 'keep-all', overflowWrap: 'normal',
+                    opacity: 0.85
+                  }}>
+                    {asciiLines.slice(0, asciiDisplayCount).join('\n')}
+                  </pre>
+                </div>
               )}
             </div>
 

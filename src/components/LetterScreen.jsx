@@ -249,7 +249,7 @@ const LetterScreen = ({ config, onFinish, isPlaying, togglePlayPause }) => {
             className="animate-heartbeat"
             style={{ width: '250px', height: 'auto' }} 
           />
-          <p style={{ color: 'white', marginTop: '2rem', letterSpacing: '4px', fontSize: '1.2rem', fontFamily: "'Inter', sans-serif" }}>
+          <p style={{ color: 'white', marginTop: '2rem', letterSpacing: '4px', fontSize: '1.1rem', fontFamily: "'Inter', sans-serif", textAlign: 'center', padding: '0 20px', lineHeight: '1.5' }}>
             CONNECTING TO IN-FLIGHT WI-FI...
           </p>
         </div>
