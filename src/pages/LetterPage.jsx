@@ -104,6 +104,7 @@ const LetterPage = () => {
             fs: 0,
             modestbranding: 1,
             rel: 0,
+            playsinline: 1,
           },
           events: {
             onReady: (event) => {
@@ -130,20 +131,17 @@ const LetterPage = () => {
 
   // Toggle play/pause
   const togglePlayPause = useCallback(() => {
-    setIsPlaying(prev => {
-      const next = !prev;
-      if (playerRef.current) {
-        try {
-          if (next) {
-            playerRef.current.playVideo();
-          } else {
-            playerRef.current.pauseVideo();
-          }
-        } catch (e) {}
-      }
-      return next;
-    });
-  }, []);
+    if (playerRef.current) {
+      try {
+        if (!isPlaying) {
+          playerRef.current.playVideo();
+        } else {
+          playerRef.current.pauseVideo();
+        }
+      } catch (e) {}
+    }
+    setIsPlaying(!isPlaying);
+  }, [isPlaying]);
 
   // Dim music volume (called when video call starts — music becomes soft background)
   const dimMusic = useCallback(() => {
@@ -218,7 +216,7 @@ const LetterPage = () => {
     <>
       {/* Persistent YouTube player - lives outside of any phase so it doesn't unmount */}
       {youtubeId && (phase === 'reading' || phase === 'video') && (
-        <div style={{ position: 'fixed', opacity: 0, pointerEvents: 'none', width: '1px', height: '1px', overflow: 'hidden', zIndex: -100 }}>
+        <div style={{ position: 'fixed', opacity: 0.01, pointerEvents: 'none', width: '200px', height: '200px', bottom: 0, right: 0, zIndex: -100 }}>
           <div id="yt-persistent-player"></div>
         </div>
       )}
