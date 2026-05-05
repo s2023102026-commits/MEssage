@@ -68,9 +68,9 @@ const LetterPage = () => {
     }
   }
 
-  // Initialize YouTube player when entering 'reading' phase
+  // Initialize YouTube player early so it's ready when the envelope is tapped
   useEffect(() => {
-    if (phase !== 'reading' || !youtubeId) return;
+    if (!youtubeId || phase === 'loading') return;
     if (musicReady) return; // Already initialized
 
     const loadYTApi = () => {
@@ -97,7 +97,7 @@ const LetterPage = () => {
           width: '1',
           videoId: youtubeId,
           playerVars: {
-            autoplay: 1,
+            autoplay: 0,
             // Loop is handled in onStateChange so we can disable it for the finale (natural end ~2:59).
             controls: 0,
             disablekb: 1,
@@ -110,8 +110,6 @@ const LetterPage = () => {
             onReady: (event) => {
               shouldLoopMusicRef.current = true;
               event.target.setVolume(80);
-              event.target.playVideo();
-              setIsPlaying(true);
               setMusicReady(true);
             },
             onStateChange: (event) => {
@@ -128,6 +126,16 @@ const LetterPage = () => {
       // Don't destroy on cleanup - we want it to persist
     };
   }, [phase, youtubeId, musicReady]);
+
+  // Start music (must be called from a direct user interaction like onClick)
+  const startMusic = useCallback(() => {
+    if (playerRef.current) {
+      try {
+        playerRef.current.playVideo();
+        setIsPlaying(true);
+      } catch (e) {}
+    }
+  }, []);
 
   // Toggle play/pause
   const togglePlayPause = useCallback(() => {
@@ -242,6 +250,7 @@ const LetterPage = () => {
       {phase === 'envelope' && (
         <EnvelopeScreen 
           onOpenComplete={() => setPhase('reading')}
+          onStartMusic={startMusic}
         />
       )}
 

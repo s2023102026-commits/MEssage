@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 
-const EnvelopeScreen = ({ onOpenComplete }) => {
+const EnvelopeScreen = ({ onOpenComplete, onStartMusic }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleOpen = () => {
     if (isOpen) return;
     setIsOpen(true);
+    
+    // Trigger music directly on the user's tap gesture
+    if (onStartMusic) {
+      onStartMusic();
+    }
     
     // Smooth transition cross-fade then move to reading screen
     setTimeout(() => {
