@@ -54,11 +54,11 @@ const PILOTS_LOG_TYPING_MS =
   PILOT_LOG_TYPING_DELAY_MS +
   PILOT_LOG_MS_PER_TICK * countTypingTicks(PILOTS_FINAL_MESSAGE);
 
-const getGoogleDriveEmbedUrl = (url) => {
+const getGoogleDriveFileId = (url) => {
   if (!url) return null;
   const match = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
   if (!match) return null;
-  return `https://drive.google.com/file/d/${match[1]}/preview?autoplay=1&hd=1`;
+  return match[1];
 };
 
 const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
@@ -82,9 +82,13 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
   const [messageComplete, setMessageComplete] = useState(false);
   const [departureStarted, setDepartureStarted] = useState(false);
   const [airplanePhase, setAirplanePhase] = useState(-1); // -1: departure text, 0: flight path, 1: flying, 2: night sky, 3: final text
+  const [driveUseIframe, setDriveUseIframe] = useState(false);
   const acceptTransitionTimeoutRef = useRef(null);
-  const driveEmbedUrl = getGoogleDriveEmbedUrl(videoUrl);
-  const useDriveEmbed = Boolean(driveEmbedUrl);
+  const driveFileId = getGoogleDriveFileId(videoUrl);
+  const driveEmbedUrl = driveFileId ? `https://drive.google.com/file/d/${driveFileId}/preview?autoplay=1&hd=1` : null;
+  const driveStreamUrl = driveFileId ? `https://drive.google.com/uc?export=download&id=${driveFileId}` : null;
+  const shouldUseDriveIframe = Boolean(driveEmbedUrl && driveUseIframe);
+  const resolvedVideoSrc = driveStreamUrl || videoUrl;
 
   const alertText = "INCOMING TRANSMISSION...\nPRIORITY UPLINK";
   const fullBodyText = "CONTACT KURT ON SECURE\nVIDEO LINK 132.085 MHZ";
@@ -200,8 +204,12 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
 
   // Play video when connected state renders
   useEffect(() => {
+    setDriveUseIframe(false);
+  }, [videoUrl]);
+
+  useEffect(() => {
     if (callState !== 'connected') return;
-    if (useDriveEmbed) {
+    if (shouldUseDriveIframe) {
       if (dimMusic) dimMusic();
       setVideoReady(true);
       return;
@@ -219,7 +227,7 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
       }
     }, 100);
     return () => clearTimeout(t);
-  }, [callState, dimMusic, useDriveEmbed]);
+  }, [callState, dimMusic, shouldUseDriveIframe]);
 
   // Call timer
   useEffect(() => {
@@ -1131,7 +1139,7 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
             transition: 'opacity 1.5s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1)',
             position: 'relative'
           }}>
-            {useDriveEmbed ? (
+            {shouldUseDriveIframe ? (
               <iframe
                 src={driveEmbedUrl}
                 title="Call video"
@@ -1142,11 +1150,16 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
             ) : (
               <video
                 ref={videoRef}
-                src={videoUrl}
+                src={resolvedVideoSrc}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 autoPlay
                 playsInline
                 preload="auto"
+                onError={() => {
+                  if (driveFileId) {
+                    setDriveUseIframe(true);
+                  }
+                }}
                 onEnded={handleVideoEnd}
               />
             )}
