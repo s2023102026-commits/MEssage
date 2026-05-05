@@ -82,13 +82,17 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
   const [messageComplete, setMessageComplete] = useState(false);
   const [departureStarted, setDepartureStarted] = useState(false);
   const [airplanePhase, setAirplanePhase] = useState(-1); // -1: departure text, 0: flight path, 1: flying, 2: night sky, 3: final text
-  const [driveUseIframe, setDriveUseIframe] = useState(false);
+  const [showDriveFallback, setShowDriveFallback] = useState(false);
+  const [videoLoadFailed, setVideoLoadFailed] = useState(false);
+  const [showTapToPlay, setShowTapToPlay] = useState(false);
   const acceptTransitionTimeoutRef = useRef(null);
+  const iframePreloadRef = useRef(null);
   const driveFileId = getGoogleDriveFileId(videoUrl);
+  // For Google Drive videos, always use the iframe embed — direct stream URLs are blocked by CORS on deployed sites
   const driveEmbedUrl = driveFileId ? `https://drive.google.com/file/d/${driveFileId}/preview?autoplay=1&hd=1` : null;
-  const driveStreamUrl = driveFileId ? `https://drive.google.com/uc?export=download&id=${driveFileId}` : null;
-  const shouldUseDriveIframe = Boolean(driveEmbedUrl && driveUseIframe);
-  const resolvedVideoSrc = driveStreamUrl || videoUrl;
+  const isDriveVideo = Boolean(driveFileId);
+  // For non-Drive videos, use the URL directly
+  const resolvedVideoSrc = isDriveVideo ? null : videoUrl;
 
   const alertText = "INCOMING TRANSMISSION...\nPRIORITY UPLINK";
   const fullBodyText = "CONTACT KURT ON SECURE\nVIDEO LINK 132.085 MHZ";
@@ -202,32 +206,81 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
     }
   }, [callState, connectPhase]);
 
-  // Play video when connected state renders
+  // Reset fallback states when videoUrl changes
   useEffect(() => {
-    setDriveUseIframe(false);
+    setShowDriveFallback(false);
+    setVideoLoadFailed(false);
+    setShowTapToPlay(false);
   }, [videoUrl]);
 
+  // Preload Drive iframe during connecting phase so it's ready when we transition
+  useEffect(() => {
+    if (callState !== 'connecting' || !isDriveVideo) return;
+    // Create a hidden iframe to start loading the Drive video early
+    if (!iframePreloadRef.current) {
+      const preloadIframe = document.createElement('iframe');
+      preloadIframe.src = driveEmbedUrl;
+      preloadIframe.style.cssText = 'position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-9999;';
+      preloadIframe.allow = 'autoplay; fullscreen';
+      document.body.appendChild(preloadIframe);
+      iframePreloadRef.current = preloadIframe;
+    }
+    return () => {
+      // Cleanup preload iframe when we leave connecting
+      if (iframePreloadRef.current) {
+        try { document.body.removeChild(iframePreloadRef.current); } catch(e) {}
+        iframePreloadRef.current = null;
+      }
+    };
+  }, [callState, isDriveVideo, driveEmbedUrl]);
+
+  // Play video when connected
   useEffect(() => {
     if (callState !== 'connected') return;
-    if (shouldUseDriveIframe) {
+
+    if (isDriveVideo) {
+      // Drive videos use iframe embed — mark as ready immediately
       if (dimMusic) dimMusic();
       setVideoReady(true);
       return;
     }
-    // Small delay to ensure the video element has mounted
+
+    // Non-Drive videos: try native <video> autoplay
     const t = setTimeout(() => {
       if (videoRef.current) {
         videoRef.current.muted = true;
         videoRef.current.play().then(() => {
-          // Dim the cassette tape music to background level
           if (dimMusic) dimMusic();
           setTimeout(() => { if (videoRef.current) videoRef.current.muted = false; }, 500);
           setVideoReady(true);
-        }).catch(e => console.warn('Autoplay blocked:', e));
+        }).catch(e => {
+          console.warn('Autoplay blocked:', e);
+          // Show a tap-to-play overlay for mobile
+          setShowTapToPlay(true);
+          setVideoReady(true);
+        });
       }
     }, 100);
     return () => clearTimeout(t);
-  }, [callState, dimMusic, shouldUseDriveIframe]);
+  }, [callState, dimMusic, isDriveVideo]);
+
+  // Fallback timeout — if the iframe seems stuck, show action buttons after 6s
+  useEffect(() => {
+    if (callState !== 'connected' || !isDriveVideo) return;
+    const t = setTimeout(() => setShowDriveFallback(true), 6000);
+    return () => clearTimeout(t);
+  }, [callState, isDriveVideo]);
+
+  // Handle tap-to-play for non-Drive videos (mobile autoplay blocked)
+  const handleTapToPlay = () => {
+    setShowTapToPlay(false);
+    if (videoRef.current) {
+      videoRef.current.muted = false;
+      videoRef.current.play().then(() => {
+        if (dimMusic) dimMusic();
+      }).catch(() => {});
+    }
+  };
 
   // Call timer
   useEffect(() => {
@@ -1139,29 +1192,177 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
             transition: 'opacity 1.5s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1)',
             position: 'relative'
           }}>
-            {shouldUseDriveIframe ? (
-              <iframe
-                src={driveEmbedUrl}
-                title="Call video"
-                allow="autoplay; fullscreen"
-                allowFullScreen
-                style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
-              />
-            ) : (
-              <video
-                ref={videoRef}
-                src={resolvedVideoSrc}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                autoPlay
-                playsInline
-                preload="auto"
-                onError={() => {
-                  if (driveFileId) {
-                    setDriveUseIframe(true);
+            {isDriveVideo ? (
+              <>
+                {/* Google Drive iframe embed — this is the most reliable way to play Drive videos on deployed sites */}
+                <iframe
+                  src={driveEmbedUrl}
+                  title="Call video"
+                  allow="autoplay; fullscreen"
+                  allowFullScreen
+                  style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+                />
+                {/* Loading overlay — shows a subtle spinner while iframe loads */}
+                {!showDriveFallback && (
+                  <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.5)',
+                    zIndex: 2, pointerEvents: 'none',
+                    animation: 'fadeIn 0.5s ease'
+                  }}>
+                    <div style={{
+                      width: '36px', height: '36px',
+                      border: '3px solid rgba(255,255,255,0.15)',
+                      borderTopColor: '#fff',
+                      borderRadius: '50%',
+                      animation: 'spin 0.8s linear infinite'
+                    }}></div>
+                    <div style={{
+                      marginTop: '14px', fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)',
+                      letterSpacing: '2px', fontFamily: '"Courier New", monospace'
+                    }}>
+                      LOADING VIDEO...
+                    </div>
+                  </div>
+                )}
+                {/* Fallback buttons if Drive iframe appears stuck */}
+                {showDriveFallback && (
+                  <div style={{
+                    position: 'absolute',
+                    left: '50%',
+                    bottom: '24px',
+                    transform: 'translateX(-50%)',
+                    zIndex: 8,
+                    display: 'flex',
+                    gap: '10px',
+                    flexWrap: 'wrap',
+                    justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.72)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: '14px',
+                    padding: '12px 16px',
+                    animation: 'fadeIn 0.5s ease'
+                  }}>
+                    <div style={{ width: '100%', textAlign: 'center', fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', marginBottom: '6px', letterSpacing: '1px' }}>
+                      Video not loading? Try these:
+                    </div>
+                    <button
+                      onClick={() => window.open(videoUrl, '_blank', 'noopener,noreferrer')}
+                      style={{
+                        background: 'rgba(255,255,255,0.14)',
+                        border: '1px solid rgba(255,255,255,0.22)',
+                        color: '#fff',
+                        borderRadius: '10px',
+                        padding: '10px 16px',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        transition: 'background 0.2s ease'
+                      }}
+                      onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.25)'}
+                      onMouseLeave={e => e.target.style.background = 'rgba(255,255,255,0.14)'}
+                    >
+                      📺 Open in Google Drive
+                    </button>
+                    <button
+                      onClick={beginCallFarewell}
+                      style={{
+                        background: '#ff3b30',
+                        border: 'none',
+                        color: '#fff',
+                        borderRadius: '10px',
+                        padding: '10px 16px',
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        transition: 'background 0.2s ease'
+                      }}
+                      onMouseEnter={e => e.target.style.background = '#ff5147'}
+                      onMouseLeave={e => e.target.style.background = '#ff3b30'}
+                    >
+                      Skip video →
+                    </button>
+                  </div>
+                )}
+                <style>{`
+                  @keyframes spin {
+                    to { transform: rotate(360deg); }
                   }
-                }}
-                onEnded={handleVideoEnd}
-              />
+                `}</style>
+              </>
+            ) : (
+              <>
+                <video
+                  ref={videoRef}
+                  src={resolvedVideoSrc}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  autoPlay
+                  playsInline
+                  preload="auto"
+                  onError={() => {
+                    setVideoLoadFailed(true);
+                  }}
+                  onEnded={handleVideoEnd}
+                />
+                {/* Tap to play overlay for mobile autoplay restrictions */}
+                {showTapToPlay && (
+                  <div
+                    onClick={handleTapToPlay}
+                    style={{
+                      position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      background: 'rgba(0,0,0,0.7)',
+                      cursor: 'pointer', zIndex: 6,
+                      animation: 'fadeIn 0.5s ease'
+                    }}
+                  >
+                    <div style={{
+                      width: '70px', height: '70px', borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.15)',
+                      backdropFilter: 'blur(10px)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      border: '2px solid rgba(255,255,255,0.3)',
+                      marginBottom: '16px',
+                      transition: 'transform 0.2s ease'
+                    }}>
+                      <div style={{
+                        width: 0, height: 0,
+                        borderLeft: '22px solid white',
+                        borderTop: '14px solid transparent',
+                        borderBottom: '14px solid transparent',
+                        marginLeft: '5px'
+                      }}></div>
+                    </div>
+                    <div style={{
+                      fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)',
+                      letterSpacing: '2px', fontFamily: '"Courier New", monospace'
+                    }}>
+                      TAP TO PLAY
+                    </div>
+                  </div>
+                )}
+                {/* Error state for non-Drive videos */}
+                {videoLoadFailed && (
+                  <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.85)', zIndex: 6
+                  }}>
+                    <div style={{ fontSize: '1.2rem', color: '#ff6b6b', marginBottom: '16px' }}>
+                      Video failed to load
+                    </div>
+                    <button
+                      onClick={beginCallFarewell}
+                      style={{
+                        background: '#ff3b30', border: 'none', color: '#fff',
+                        borderRadius: '10px', padding: '10px 20px',
+                        cursor: 'pointer', fontSize: '0.9rem'
+                      }}
+                    >
+                      Continue →
+                    </button>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Fade overlay when video ends */}
