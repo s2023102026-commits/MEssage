@@ -46,7 +46,7 @@ const CreatorPage = () => {
       
       const baseUrl = window.location.origin;
       const basePath = import.meta.env.BASE_URL || '/';
-      const finalUrl = `${baseUrl}${basePath}letter?data=${base64Data}`;
+      const finalUrl = `${baseUrl}${basePath}#/letter?data=${base64Data}`;
       
       setGeneratedLink(finalUrl);
     } catch (err) {
