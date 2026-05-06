@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plane, PlayCircle, PauseCircle, Music, Coffee, Heart, Camera } from 'lucide-react';
 
+const withBase = (path) => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`;
+
 const LetterScreen = ({ config, onFinish, isPlaying, togglePlayPause }) => {
   const { title, message, photos } = config;
   
@@ -57,7 +59,7 @@ const LetterScreen = ({ config, onFinish, isPlaying, togglePlayPause }) => {
       minHeight: '100vh', 
       position: 'relative',
       overflow: 'hidden',
-      backgroundImage: 'url(/background.png)',
+      backgroundImage: `url(${withBase('/background.png')})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundAttachment: 'fixed',
@@ -244,7 +246,7 @@ const LetterScreen = ({ config, onFinish, isPlaying, togglePlayPause }) => {
           justifyContent: 'center',
         }}>
           <img 
-            src="/facetime-icon.png" 
+            src={withBase('/facetime-icon.png')} 
             alt="Connecting FaceTime" 
             className="animate-heartbeat"
             style={{ width: '250px', height: 'auto' }} 

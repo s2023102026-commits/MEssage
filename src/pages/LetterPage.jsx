@@ -7,7 +7,7 @@ import VideoMessageScreen from '../components/VideoMessageScreen';
 
 /** Seconds of audio kept at the end of the track for the farewell → airplane scene (any track length). */
 const FINALE_MUSIC_TAIL_SEC = 74;
-const DEFAULT_VIDEO_URL = '/video.mp4';
+const DEFAULT_VIDEO_URL = `${import.meta.env.BASE_URL}video.mp4`;
 
 const LetterPage = () => {
   const [searchParams] = useSearchParams();
@@ -232,7 +232,7 @@ const LetterPage = () => {
       {phase === 'loading' && (
         <div className="flex-center" style={{ minHeight: '100vh', flexDirection: 'column', background: '#111' }}>
           <div className="animate-heartbeat" style={{ marginBottom: '1rem' }}>
-             <img src="/loading_icon.png" alt="Loading Envelope" style={{ width: '110px', height: 'auto' }} onError={(e) => { e.target.style.display = 'none'; }} />
+             <img src={`${import.meta.env.BASE_URL}loading_icon.png`} alt="Loading Envelope" style={{ width: '110px', height: 'auto' }} onError={(e) => { e.target.style.display = 'none'; }} />
           </div>
           <p style={{ color: 'white', letterSpacing: '4px', fontSize: '0.8rem', opacity: 0.8 }}>
             LOADING YOUR PAGE...

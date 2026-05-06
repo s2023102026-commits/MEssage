@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+const withBase = (path) => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`;
+
 const PinScreen = ({ correctPin, onUnlock }) => {
   const [digits, setDigits] = useState([0, 0, 0, 0]);
   const [errorShake, setErrorShake] = useState(false);
@@ -41,7 +43,7 @@ const PinScreen = ({ correctPin, onUnlock }) => {
     <div className="flex-center animate-fade-in" style={{ 
       minHeight: '100vh', 
       flexDirection: 'column',
-      backgroundImage: 'url(/background.png)',
+      backgroundImage: `url(${withBase('/background.png')})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       overflow: 'hidden'

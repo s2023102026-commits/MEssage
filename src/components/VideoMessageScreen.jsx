@@ -53,6 +53,7 @@ const ASCII_DECRYPT_MS = 1500 + 800;
 const PILOTS_LOG_TYPING_MS =
   PILOT_LOG_TYPING_DELAY_MS +
   PILOT_LOG_MS_PER_TICK * countTypingTicks(PILOTS_FINAL_MESSAGE);
+const withBase = (path) => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`;
 
 const getGoogleDriveFileId = (url) => {
   if (!url) return null;
@@ -336,7 +337,7 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
     if (endPhase !== 3) return;
 
     // Fetch ASCII art and set up line-by-line printing
-    fetch('/ascii-art.txt')
+    fetch(withBase('/ascii-art.txt'))
       .then(r => r.text())
       .then(text => {
         const lines = text.split('\n');
@@ -445,7 +446,7 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
           {airplanePhase >= 2 && (
             <div style={{
               position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-              backgroundImage: 'url(/night-sky.png)',
+              backgroundImage: `url(${withBase('/night-sky.png')})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               animation: 'nightSkyReveal 4s ease forwards',
@@ -693,7 +694,7 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
                 }}></div>
                 {/* The plane itself - custom image */}
                 <img 
-                  src="/plane-icon.png" 
+                  src={withBase('/plane-icon.png')} 
                   alt="" 
                   style={{ 
                     width: '130px', height: 'auto', 
@@ -1050,7 +1051,7 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
       {callState === 'incoming' && (
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.85)), url(/cockpit-bg.png)',
+          background: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.85)), url(${withBase('/cockpit-bg.png')})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           zIndex: 10,
@@ -1073,7 +1074,7 @@ const VideoMessageScreen = ({ videoUrl, dimMusic, restartMusicForFinale }) => {
               backgroundColor: '#050505', borderRadius: '4cqw'
             }}></div>
 
-            <img src="/fmc-bg.png" alt="FMC" style={{ 
+            <img src={withBase('/fmc-bg.png')} alt="FMC" style={{ 
               width: '100%', height: 'auto', display: 'block', position: 'relative', zIndex: 1
             }} />
 

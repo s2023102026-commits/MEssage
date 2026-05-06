@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+const withBase = (path) => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`;
+
 const EnvelopeScreen = ({ onOpenComplete, onStartMusic }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -22,7 +24,7 @@ const EnvelopeScreen = ({ onOpenComplete, onStartMusic }) => {
     <div className="flex-center animate-fade-in" style={{ 
       minHeight: '100vh', 
       flexDirection: 'column',
-      backgroundImage: 'url(/background.png)',
+      backgroundImage: `url(${withBase('/background.png')})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       position: 'relative'
@@ -50,7 +52,7 @@ const EnvelopeScreen = ({ onOpenComplete, onStartMusic }) => {
         onMouseLeave={(e) => { if (!isOpen) e.currentTarget.style.transform = 'scale(1.02)' }}
       >
         <img 
-            src="/envelope_open.png" 
+            src={withBase('/envelope_open.png')} 
             alt="Opened Envelope" 
             style={{ 
                 position: 'absolute', 
@@ -65,7 +67,7 @@ const EnvelopeScreen = ({ onOpenComplete, onStartMusic }) => {
             }} 
         />
         <img 
-            src="/envelope_closed.png" 
+            src={withBase('/envelope_closed.png')} 
             alt="Closed Envelope" 
             style={{ 
                 position: 'absolute', 
